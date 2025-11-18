@@ -19,5 +19,4 @@ public interface ArticuloService {
     List<String> listarCategoriasUnicas();
     Page<Articulo> filtrarPorCategorias(List<String> categorias, Pageable pageable);
 
-
 }

@@ -40,7 +40,6 @@ public class ScraperTrigger {
         CompletableFuture.runAsync(() -> {
             try {
                 log.info("Scraper iniciado...");
-                ScraperNoticias.runOnce(); // tu método estático
                 lastRun = Instant.now();
                 log.info("Scraper finalizado. lastRun={}", lastRun);
             } catch (Exception e) {

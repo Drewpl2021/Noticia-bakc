@@ -44,54 +44,50 @@ public class ScraperNoticias {
     // patrón clásico con fecha /YYYY/MM/DD/
     private static final Pattern PATTERN_POST = Pattern.compile("/20\\d{2}/\\d{2}/\\d{2}/");
     // patrón alterno para sitios que no usan fecha (p. ej. La República)
-    private static final Pattern PATTERN_NOTICIA = Pattern.compile("(-noticia(/|$))|(/noticia/)");
+// patrón alterno: cualquier URL que contenga "noticia"
+    private static final Pattern PATTERN_NOTICIA =
+            Pattern.compile("noticia-\\d+", Pattern.CASE_INSENSITIVE);
 
-
-    // ===== reemplaza tu main por este =====
-    public static void main(String[] args) {
+    public static int runOnce(String homeUrl) {
+        int count = 0;
         try {
-            System.out.println("=== Noticias encontradas ===\n");
+            System.out.println("=== Ejecutando scraper para: " + homeUrl + " ===");
 
-            int count = 0;
+            List<String> enlaces = getHomepageArticleLinks(homeUrl);
 
-            for (String home : HOME_URLS) {
-                List<String> enlaces = getHomepageArticleLinks(home);
+            for (String urlNoticia : enlaces) {
+                if (count >= MAX_ARTICLES) break;
 
-                for (String urlNoticia : enlaces) {
-                    if (count >= MAX_ARTICLES) break;
+                try {
+                    Articulo art = extractArticle(urlNoticia);
 
-                    try {
-                        Articulo art = extractArticle(urlNoticia);
-
-                        // Si no vino categoría desde la página, infiere por el título
-                        if (art.categorias == null || art.categorias.isBlank()) {
-                            art.categorias = inferCategoria(art.titulo); // <-- usa 'art', no 'a'
-                        }
-
-                        System.out.println("Título: " + (art.titulo != null && !art.titulo.isBlank() ? art.titulo : "(sin título)"));
-                        System.out.println("Enlace: " + urlNoticia);
-                        if (art.imagenUrl != null) System.out.println("Imagen: " + art.imagenUrl);
-                        System.out.println();
-
-                        saveArticle(art);
-                        count++;
-                        Thread.sleep(SLEEP_MS);
-
-                    } catch (Exception ex) {
-                        System.err.println("Error procesando: " + urlNoticia + " -> " + ex.getMessage());
+                    // Si no vino categoría desde la página, infiere por el título
+                    if (art.categorias == null || art.categorias.isBlank()) {
+                        art.categorias = inferCategoria(art.titulo);
                     }
+
+                    System.out.println("Título: " +
+                            (art.titulo != null && !art.titulo.isBlank() ? art.titulo : "(sin título)"));
+                    System.out.println("Enlace: " + urlNoticia);
+                    if (art.imagenUrl != null) System.out.println("Imagen: " + art.imagenUrl);
+                    System.out.println();
+
+                    saveArticle(art);
+                    count++;
+                    Thread.sleep(SLEEP_MS);
+
+                } catch (Exception ex) {
+                    System.err.println("Error procesando: " + urlNoticia + " -> " + ex.getMessage());
                 }
             }
 
-            System.out.println("✅ Proceso finalizado. Total guardadas: " + count);
+            System.out.println("✅ Proceso finalizado para " + homeUrl + ". Total guardadas: " + count);
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return count;
     }
 
-    public static void runOnce() {
-
-    }
 
 
     // ================== Modelo ==================
@@ -143,9 +139,21 @@ public class ScraperNoticias {
         boolean allowedDomain = DOMAIN_PREFIXES.stream().anyMatch(url::startsWith);
         if (!allowedDomain) return false;
 
-        // valida por URL con fecha o por sufijo/segmento "-noticia" o "/noticia/"
-        return PATTERN_POST.matcher(url).find() || PATTERN_NOTICIA.matcher(url).find();
+        String lower = url.toLowerCase(Locale.ROOT);
+
+        // 1) URLs con fecha tipo /2024/05/10/ (para diarios con fecha en la ruta)
+        if (PATTERN_POST.matcher(lower).find()) {
+            return true;
+        }
+
+        // 2) URLs con 'noticia-<id>' (como RPP)
+        if (PATTERN_NOTICIA.matcher(lower).find()) {
+            return true;
+        }
+
+        return false;
     }
+
 
     // ================== Scraping ==================
 
@@ -159,6 +167,20 @@ public class ScraperNoticias {
 
         Set<String> enlaces = new LinkedHashSet<>();
 
+        // 👇 CASO ESPECIAL: RPP
+        if (homeUrl.contains("rpp.pe")) {
+            // Todas las anclas que parezcan noticia: ...-noticia-<id>
+            Elements anchorsNoticias = doc.select("a[href*='-noticia-']");
+            for (Element a : anchorsNoticias) {
+                String abs = absolutizeUrl(homeUrl, a.attr("href"));
+                if (isLikelyPost(abs)) {
+                    enlaces.add(abs);
+                }
+            }
+            return new ArrayList<>(enlaces);
+        }
+
+        // 👇 PARA OTROS SITIOS (como diariosinfronteras)
         // 1) Como tu script original: h3 > a
         Elements h3s = doc.select("h3");
         for (Element h3 : h3s) {
@@ -169,7 +191,7 @@ public class ScraperNoticias {
             }
         }
 
-        // 2) Anclas que contienen año en la ruta
+        // 2) Anclas que contienen año en la ruta (clásico /2024/05/10/)
         Elements anchors = doc.select("a[href*='/20']");
         for (Element a : anchors) {
             String abs = absolutizeUrl(homeUrl, a.attr("href"));
@@ -178,6 +200,7 @@ public class ScraperNoticias {
 
         return new ArrayList<>(enlaces);
     }
+
 
     /** Extrae detalle de una noticia */
     private static Articulo extractArticle(String url) throws Exception {
