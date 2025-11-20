@@ -47,7 +47,9 @@ public class AuthController {
                 token,
                 usuario.getName(),
                 usuario.getLastName(),
+                usuario.getId(),
                 roleName
+
         );
     }
 }

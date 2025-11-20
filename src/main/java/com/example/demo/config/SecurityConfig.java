@@ -31,12 +31,19 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Login público
                         .requestMatchers("/api/auth/**").permitAll()
+                        // Webhooks de pasarela (Stripe, Culqi, etc.) → deben ser públicos
+                        .requestMatchers("/api/webhook/**").permitAll()
                         // Artículos públicos (ajusta si quieres)
                         .requestMatchers("/api/articulos/**").permitAll()
-                        // Las APIs restringidas:
+                        .requestMatchers("/api/productos/**").permitAll()
+
+                        // 🔐 APIs restringidas (requieren estar logueado con JWT)
                         .requestMatchers("/api/roles/**").authenticated()
                         .requestMatchers("/api/usuarios/**").authenticated()
                         .requestMatchers("/api/scrappers/**").authenticated()
+                        .requestMatchers("/api/payments/**").authenticated()        // checkout, etc.
+                        .requestMatchers("/api/membresias/**").authenticated()  // ver/gestionar membresías
+
                         // cualquier otra
                         .anyRequest().permitAll()
                 )
