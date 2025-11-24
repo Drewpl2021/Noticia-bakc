@@ -21,5 +21,7 @@ public interface ArticuloService {
 
     byte[] exportarCsvArticulos();
     byte[] exportarCsvPorCategorias(List<String> categorias);
+    byte[] exportarCsvPorFecha(LocalDateTime desde, LocalDateTime hasta);
+    byte[] exportarCsvPorFechaYCategorias(LocalDateTime desde, LocalDateTime hasta, List<String> categorias);
 
 }

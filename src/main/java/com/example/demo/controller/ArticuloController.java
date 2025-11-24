@@ -177,6 +177,51 @@ public class ArticuloController {
                 .contentLength(data.length)
                 .body(resource);
     }
+
+    @GetMapping("/export-csv-fecha")
+    public ResponseEntity<Resource> exportarCsvPorFecha(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta
+    ) {
+        LocalDateTime d1 = (desde != null) ? desde.atStartOfDay() : null;
+        LocalDateTime d2 = (hasta != null) ? hasta.atTime(23, 59, 59) : null;
+
+        byte[] data = service.exportarCsvPorFecha(d1, d2);
+        ByteArrayResource resource = new ByteArrayResource(data);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"articulos_fecha.csv\"")
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .contentLength(data.length)
+                .body(resource);
+    }
+    @GetMapping("/export-csv-filtros")
+    public ResponseEntity<Resource> exportarCsvPorFiltros(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            @RequestParam(required = false) String categoria
+    ) {
+        LocalDateTime d1 = (desde != null) ? desde.atStartOfDay() : null;
+        LocalDateTime d2 = (hasta != null) ? hasta.atTime(23, 59, 59) : null;
+
+        List<String> categorias = null;
+        if (categoria != null && !categoria.isBlank()) {
+            categorias = Arrays.stream(categoria.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .toList();
+        }
+
+        byte[] data = service.exportarCsvPorFechaYCategorias(d1, d2, categorias);
+        ByteArrayResource resource = new ByteArrayResource(data);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"articulos_filtros.csv\"")
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .contentLength(data.length)
+                .body(resource);
+    }
+
     @PostMapping("/import-csv")
     public ResponseEntity<ArticuloImportResult> importarCsv(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {

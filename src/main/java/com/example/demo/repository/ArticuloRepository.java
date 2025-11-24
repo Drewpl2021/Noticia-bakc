@@ -3,6 +3,7 @@ package com.example.demo.repository;
 import com.example.demo.entity.Articulo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -27,5 +28,7 @@ public interface ArticuloRepository extends JpaRepository<Articulo, Long>, JpaSp
 
     @Query(value = "SELECT categorias FROM articulos WHERE categorias IS NOT NULL AND categorias <> ''", nativeQuery = true)
     List<String> findAllCategoriasRaw();
+
+    List<Articulo> findByFechaPublicadoBetween(LocalDateTime desde, LocalDateTime hasta, Sort sort);
 
 }

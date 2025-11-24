@@ -204,4 +204,50 @@ public class ArticuloServiceImpl implements ArticuloService {
         }
         return text;
     }
+    @Override
+    public byte[] exportarCsvPorFecha(LocalDateTime desde, LocalDateTime hasta) {
+        if (desde == null) desde = LocalDateTime.of(1970, 1, 1, 0, 0);
+        if (hasta == null) hasta = LocalDateTime.now();
+
+        List<Articulo> articulos = repo.findByFechaPublicadoBetween(desde, hasta, Sort.by(Sort.Direction.DESC, "fechaPublicado"));
+        return toCsv(articulos);
+    }
+    @Override
+    public byte[] exportarCsvPorFechaYCategorias(LocalDateTime desde,
+                                                 LocalDateTime hasta,
+                                                 List<String> categorias) {
+
+        // Normalizas primero
+        LocalDateTime desdeFinal = (desde != null)
+                ? desde
+                : LocalDateTime.of(1970, 1, 1, 0, 0);
+
+        LocalDateTime hastaFinal = (hasta != null)
+                ? hasta
+                : LocalDateTime.now();
+
+        Specification<Articulo> spec = (root, query, cb) -> {
+            List<Predicate> preds = new ArrayList<>();
+
+            // ✅ Usas las variables "finales"
+            preds.add(cb.between(root.get("fechaPublicado"), desdeFinal, hastaFinal));
+
+            if (categorias != null && !categorias.isEmpty()) {
+                List<Predicate> orCats = new ArrayList<>();
+                for (String c : categorias) {
+                    orCats.add(cb.like(root.get("categorias"), "%" + c + "%"));
+                }
+                preds.add(cb.or(orCats.toArray(new Predicate[0])));
+            }
+
+            return cb.and(preds.toArray(new Predicate[0]));
+        };
+
+        List<Articulo> articulos =
+                repo.findAll(spec, Sort.by(Sort.Direction.DESC, "fechaPublicado"));
+
+        return toCsv(articulos);
+    }
+
+
 }
