@@ -7,9 +7,14 @@ import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -129,4 +134,74 @@ public class ArticuloServiceImpl implements ArticuloService {
         return repo.findAll(spec, pageable);
     }
 
+    @Override
+    public byte[] exportarCsvArticulos() {
+        // todos los artículos, ordenados por fechaPublicado desc
+        List<Articulo> articulos = repo.findAll(Sort.by(Sort.Direction.DESC, "fechaPublicado"));
+        return toCsv(articulos);
+    }
+
+    @Override
+    public byte[] exportarCsvPorCategorias(List<String> categorias) {
+        if (categorias == null || categorias.isEmpty()) {
+            // si no mandan categorías, exporta todo
+            List<Articulo> articulos = repo.findAll(Sort.by(Sort.Direction.DESC, "fechaPublicado"));
+            return toCsv(articulos);
+        }
+
+        // Reutilizamos tu Specification, pero sin paginación (unpaged)
+        Page<Articulo> page = filtrarPorCategorias(categorias, Pageable.unpaged());
+        List<Articulo> articulos = page.getContent();
+
+        return toCsv(articulos);
+    }
+
+    // 🔹 Lógica central para generar el CSV (reutilizable)
+    private byte[] toCsv(List<Articulo> articulos) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        try (PrintWriter writer =
+                     new PrintWriter(new OutputStreamWriter(baos, StandardCharsets.UTF_8))) {
+
+            // BOM para que Excel lea bien UTF-8
+            writer.write('\uFEFF');
+
+            // Cabeceras CSV: ajusta a los campos reales de tu entidad
+            writer.println("id,titulo,autor,fechaPublicado,url,imagenUrl,categorias,tags");
+
+            for (Articulo a : articulos) {
+                writer.println(
+                        csv(a.getId()) + "," +
+                                csv(a.getTitulo()) + "," +
+                                csv(a.getAutor()) + "," +
+                                csv(a.getFechaPublicado() != null ? a.getFechaPublicado().toString() : "") + "," +
+                                csv(a.getUrl()) + "," +
+                                csv(a.getImagenUrl()) + "," +
+                                csv(a.getCategorias()) + "," +
+                                csv(a.getTags())
+                );
+            }
+
+            writer.flush();
+        } catch (Exception e) {
+            throw new RuntimeException("Error al generar CSV de artículos", e);
+        }
+
+        return baos.toByteArray();
+    }
+
+    /**
+     * Escapa comas, comillas y saltos de línea para formato CSV.
+     */
+    private String csv(Object value) {
+        if (value == null) return "";
+        String text = String.valueOf(value);
+        boolean hasSpecial = text.contains(",") || text.contains("\"")
+                || text.contains("\n") || text.contains("\r");
+        if (hasSpecial) {
+            text = text.replace("\"", "\"\""); // escapa comillas dobles
+            return "\"" + text + "\"";
+        }
+        return text;
+    }
 }

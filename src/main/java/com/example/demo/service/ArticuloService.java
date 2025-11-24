@@ -19,4 +19,7 @@ public interface ArticuloService {
     List<String> listarCategoriasUnicas();
     Page<Articulo> filtrarPorCategorias(List<String> categorias, Pageable pageable);
 
+    byte[] exportarCsvArticulos();
+    byte[] exportarCsvPorCategorias(List<String> categorias);
+
 }

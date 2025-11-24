@@ -26,8 +26,9 @@ public class Articulo {
     @Column(nullable = false, length = 600)
     private String url;
 
-    @Lob
-    private String titulo;
+    //@Lob
+    @Column(columnDefinition = "TEXT")
+     private String titulo;
 
     @Column(length = 255)
     private String autor;
@@ -38,13 +39,15 @@ public class Articulo {
     @Column(name = "imagen_url", length = 600)
     private String imagenUrl;
 
-    @Lob
+    //@Lob
+    @Column(columnDefinition = "TEXT")
     private String contenido;
 
-    @Lob
+    //@Lob
+    @Column(columnDefinition = "TEXT")
     private String tags;
 
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String categorias;
 
 

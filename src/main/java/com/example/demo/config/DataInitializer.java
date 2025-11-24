@@ -130,7 +130,7 @@ public class DataInitializer implements CommandLineRunner {
             Producto p1 = Producto.builder()
                     .nombre("Premium Mensual")
                     .descripcion("Acceso completo por 30 días")
-                    .precio(29.90)
+                    .precio(29.99)
                     .tipo("SUSCRIPCION")
                     .estado("ACTIVO")
                     .build();
@@ -142,7 +142,7 @@ public class DataInitializer implements CommandLineRunner {
             Producto p2 = Producto.builder()
                     .nombre("Premium Anual")
                     .descripcion("Acceso completo por 12 meses")
-                    .precio(249.90)
+                    .precio(249.99)
                     .tipo("SUSCRIPCION")
                     .estado("ACTIVO")
                     .build();
@@ -154,24 +154,12 @@ public class DataInitializer implements CommandLineRunner {
             Producto p3 = Producto.builder()
                     .nombre("Clásico Mensual")
                     .descripcion("Acceso estándar por 30 días")
-                    .precio(15.00)
+                    .precio(14.99)
                     .tipo("SUSCRIPCION")
                     .estado("ACTIVO")
                     .build();
 
             productoRepository.save(p3);
-        }
-
-        if (!productoRepository.existsByNombre("Super Usuario")) {
-            Producto p4 = Producto.builder()
-                    .nombre("Super Usuario")
-                    .descripcion("Acceso ilimitado a todas las funciones")
-                    .precio(99.90)
-                    .tipo("SUSCRIPCION")
-                    .estado("ACTIVO")
-                    .build();
-
-            productoRepository.save(p4);
         }
     }
 

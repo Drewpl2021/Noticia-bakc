@@ -1,15 +1,26 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.ArticuloImportResult;
 import com.example.demo.entity.Articulo;
+import com.example.demo.service.ArticuloImportService;
 import com.example.demo.service.ArticuloService;
+import org.springframework.core.io.Resource;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.*;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+
 
 @CrossOrigin(origins = "http://localhost:4200")
 @RestController
@@ -18,6 +29,7 @@ import java.util.List;
 public class ArticuloController {
 
     private final ArticuloService service;
+    private final ArticuloImportService importService;
 
     @GetMapping
     public Page<Articulo> listar(
@@ -78,15 +90,24 @@ public class ArticuloController {
 
     @GetMapping("/fecha")
     public Page<Articulo> porFecha(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime desde,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime hasta,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "fechaPublicado,desc") String sort
     ) {
         Pageable pageable = toPageable(page, size, sort);
-        return service.porRangoFecha(desde, hasta, pageable);
+
+        LocalDateTime desdeDt = (desde != null) ? desde.atStartOfDay() : null;
+        LocalDateTime hastaDt = (hasta != null) ? hasta.atTime(23, 59, 59) : null;
+
+        return service.porRangoFecha(desdeDt, hastaDt, pageable);
     }
+
 
     @GetMapping("/categoria")
     public Page<Articulo> porCategoria(
@@ -120,5 +141,48 @@ public class ArticuloController {
     @GetMapping("/categorias")
     public List<String> categoriasUnicas() {
         return service.listarCategoriasUnicas();
+    }
+
+    @GetMapping("/export-csv")
+    public ResponseEntity<Resource> exportarCsv() {
+        byte[] data = service.exportarCsvArticulos();
+        ByteArrayResource resource = new ByteArrayResource(data);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"articulos.csv\"")
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .contentLength(data.length)
+                .body(resource);
+    }
+
+    @GetMapping("/export-csv-por-categoria")
+    public ResponseEntity<Resource> exportarCsvPorCategoria(
+            @RequestParam(name = "categoria", required = false) String categoria // ej: "Deportes" o "Deportes,Politica"
+    ) {
+        List<String> categorias = null;
+
+        if (categoria != null && !categoria.isBlank()) {
+            categorias = Arrays.stream(categoria.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .toList();
+        }
+
+        byte[] data = service.exportarCsvPorCategorias(categorias);
+        ByteArrayResource resource = new ByteArrayResource(data);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"articulos_por_categoria.csv\"")
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .contentLength(data.length)
+                .body(resource);
+    }
+    @PostMapping("/import-csv")
+    public ResponseEntity<ArticuloImportResult> importarCsv(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+        ArticuloImportResult result = importService.importarDesdeCsv(file);
+        return ResponseEntity.ok(result);
     }
 }
