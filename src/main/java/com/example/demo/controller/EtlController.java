@@ -15,7 +15,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = "https://noticia-angular-qgv4.vercel.app")
 @RestController
 @RequestMapping("/api/etl")
 @RequiredArgsConstructor

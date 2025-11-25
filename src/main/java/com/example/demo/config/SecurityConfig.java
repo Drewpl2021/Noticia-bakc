@@ -58,8 +58,7 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         // Origen permitido: tu app Angular
-        config.setAllowedOrigins(List.of("http://localhost:4200"));
-
+        config.setAllowedOrigins(List.of("http://localhost:4200", "https://noticia-angular-qgv4.vercel.app"));
         // Métodos HTTP permitidos
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 

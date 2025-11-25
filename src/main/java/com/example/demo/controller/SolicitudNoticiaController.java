@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = "https://noticia-angular-qgv4.vercel.app")
 @RestController
 @RequestMapping("/api/solicitudes-noticias")
 @RequiredArgsConstructor
