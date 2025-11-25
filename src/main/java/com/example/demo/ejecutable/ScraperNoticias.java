@@ -14,7 +14,7 @@ public class ScraperNoticias {
 
     // ================== Config MySQL (Laragon local) ==================
     private static final String DB_URL =
-            "jdbc:mysql://localhost:3306/noticias?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&useUnicode=true&characterEncoding=utf8";
+            "jdbc:mysql://noticias.cng9drffpf1p.us-east-1.rds.amazonaws.com:3306/noticias?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
     private static final String DB_USER = "root";
     private static final String DB_PASS = "";
 
