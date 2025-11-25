@@ -6,6 +6,8 @@ import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class JwtTokenUtil {
@@ -18,11 +20,26 @@ public class JwtTokenUtil {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
     }
 
+    // ✅ Método antiguo sigue existiendo (por si se usa en otro lado)
     public String generateToken(String username) {
+        return generateToken(username, null, null);
+    }
+
+    // ⭐ Nuevo: genera token con role y plan como claims
+    public String generateToken(String username, String role, String plan) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + EXPIRATION_MS);
 
+        Map<String, Object> claims = new HashMap<>();
+        if (role != null) {
+            claims.put("role", role);
+        }
+        if (plan != null) {
+            claims.put("plan", plan);
+        }
+
         return Jwts.builder()
+                .setClaims(claims)
                 .setSubject(username)
                 .setIssuedAt(now)
                 .setExpiration(expiry)

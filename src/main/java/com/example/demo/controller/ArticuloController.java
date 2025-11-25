@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.ArticuloImportResult;
+import com.example.demo.dto.CsvAnalysisResult;
 import com.example.demo.entity.Articulo;
 import com.example.demo.service.ArticuloImportService;
 import com.example.demo.service.ArticuloService;
@@ -19,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 
@@ -222,12 +224,41 @@ public class ArticuloController {
                 .body(resource);
     }
 
-    @PostMapping("/import-csv")
-    public ResponseEntity<ArticuloImportResult> importarCsv(@RequestParam("file") MultipartFile file) {
+    @PostMapping("/etl/analisis-csv")
+    public ResponseEntity<CsvAnalysisResult> analizarCsv(
+            @RequestParam("file") MultipartFile file
+    ) {
         if (file.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
-        ArticuloImportResult result = importService.importarDesdeCsv(file);
+        CsvAnalysisResult result = importService.analizarCsv(file);
         return ResponseEntity.ok(result);
+    }
+
+    // 🔹 2) Aplicar ETL a columnas seleccionadas + exportar CSV
+    @PostMapping("/etl/aplicar-csv")
+    public ResponseEntity<Resource> aplicarEtlYExportar(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(name = "columnas", required = false) List<String> columnas
+    ) {
+        if (file.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        byte[] data = importService.aplicarEtlYExportar(
+                file,
+                (columnas == null || columnas.isEmpty())
+                        ? null
+                        : new HashSet<>(columnas)
+        );
+
+        ByteArrayResource resource = new ByteArrayResource(data);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"articulos_etl.csv\"")
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .contentLength(data.length)
+                .body(resource);
     }
 }

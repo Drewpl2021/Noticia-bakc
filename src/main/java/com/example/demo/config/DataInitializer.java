@@ -26,7 +26,6 @@ public class DataInitializer implements CommandLineRunner {
         initUsers();
         initScrappers();
         initProductos();
-        initMembresias();
     }
 
     private void initRoles() {
@@ -162,61 +161,4 @@ public class DataInitializer implements CommandLineRunner {
             productoRepository.save(p3);
         }
     }
-
-    private void initMembresias() {
-
-        // Buscar usuarios
-        var optAndres = usuarioRepository.findByUsername("andres.montes");
-        var optDeysy  = usuarioRepository.findByUsername("deysy.muñuico");
-
-        // Buscar productos (planes)
-        var optPremiumMensual = productoRepository.findByNombre("Premium Mensual");
-        var optBasicoMensual  = productoRepository.findByNombre("Clásico Mensual");
-
-        // Si alguno no existe, salimos sin romper la app
-        if (optAndres.isEmpty() || optPremiumMensual.isEmpty()) {
-            return;
-        }
-
-        if (optDeysy.isEmpty() || optBasicoMensual.isEmpty()) {
-            // no pasa nada, solo no se crea la membresía de Deysy
-        }
-
-        // Membresía ACTIVA para Andrés
-        if (!membresiaRepository.existsByUsuarioUsernameAndEstado("andres.montes", "ACTIVA")) {
-
-            LocalDateTime ahora = LocalDateTime.now();
-
-            Membresia m1 = Membresia.builder()
-                    .usuario(optAndres.get())
-                    .producto(optPremiumMensual.get())       // FK -> productos.id
-                    .fechaInicio(ahora.minusDays(2))
-                    .fechaFin(ahora.plusDays(28))            // 30 días
-                    .estado("ACTIVA")
-                    .paymentReference("SEED-ANDRES-001")
-                    .build();
-
-            membresiaRepository.save(m1);
-        }
-
-        // Membresía VENCIDA para Deysy
-        if (optDeysy.isPresent() && optBasicoMensual.isPresent() &&
-                !membresiaRepository.existsByUsuarioUsernameAndEstado("deysy.muñuico", "VENCIDA")) {
-
-            LocalDateTime ahora = LocalDateTime.now();
-
-            Membresia m2 = Membresia.builder()
-                    .usuario(optDeysy.get())
-                    .producto(optBasicoMensual.get())        // FK -> productos.id
-                    .fechaInicio(ahora.minusDays(40))
-                    .fechaFin(ahora.minusDays(10))           // ya venció
-                    .estado("VENCIDA")
-                    .paymentReference("SEED-DEYSY-001")
-                    .build();
-
-            membresiaRepository.save(m2);
-        }
-    }
-
-
 }

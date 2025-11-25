@@ -32,15 +32,41 @@ public class MembresiaServiceImpl implements MembresiaService {
 
     @Override
     public Membresia crear(Membresia membresia) {
-        // Aquí podrías validar:
-        // - que venga usuario
-        // - que venga producto
-        // - que fechaFin > fechaInicio
+
+        if (membresia.getUsuario() == null || membresia.getUsuario().getId() == null) {
+            throw new RuntimeException("La membresía debe tener un usuario con id.");
+        }
+        if (membresia.getProducto() == null || membresia.getProducto().getId() == null) {
+            throw new RuntimeException("La membresía debe tener un producto (plan) con id.");
+        }
+
+        Long usuarioId = membresia.getUsuario().getId();
+
+        // 🔹 Buscar si el usuario ya tiene una membresía ACTIVA
+        List<Membresia> activas = membresiaRepository.findByUsuarioIdAndEstado(usuarioId, "ACTIVA");
+
+        // Si ya tiene una membresía activa → ACTUALIZAMOS esa misma
+        if (!activas.isEmpty()) {
+            Membresia actual = activas.get(0); // asumimos una activa por usuario
+
+            actual.setProducto(membresia.getProducto());
+            actual.setFechaInicio(membresia.getFechaInicio());
+            actual.setFechaFin(membresia.getFechaFin());
+            actual.setPaymentReference(membresia.getPaymentReference());
+
+            // aseguramos estado ACTIVA
+            actual.setEstado("ACTIVA");
+
+            return membresiaRepository.save(actual);
+        }
+
+        // Si NO tiene membresía activa → creamos una nueva
         if (membresia.getEstado() == null) {
             membresia.setEstado("ACTIVA");
         }
         return membresiaRepository.save(membresia);
     }
+
 
     @Override
     public Membresia actualizar(Long id, Membresia membresia) {

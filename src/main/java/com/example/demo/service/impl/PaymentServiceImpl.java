@@ -102,28 +102,44 @@ public class PaymentServiceImpl implements PaymentService {
                     .build();
         }
 
-        // 6) Crear la membresía en tu BD
+        // 6) Crear **o actualizar** la membresía en tu BD
         LocalDateTime ahora = LocalDateTime.now();
-        // por ejemplo, 30 días para todos los productos SUSCRIPCION
         LocalDateTime fin = ahora.plusDays(30);
 
-        Membresia membresia = Membresia.builder()
-                .usuario(usuario)
-                .producto(producto)
-                .fechaInicio(ahora)
-                .fechaFin(fin)
-                .estado("ACTIVA")
-                .paymentReference(chargeId) // id de Culqi
-                .build();
+// Buscar si el usuario ya tiene una membresía ACTIVA
+        var activas = membresiaRepository.findByUsuarioIdAndEstado(usuario.getId(), "ACTIVA");
+
+        Membresia membresia;
+
+        if (!activas.isEmpty()) {
+            // ✅ Ya tiene una membresía activa → la ACTUALIZAMOS
+            membresia = activas.get(0);
+            membresia.setProducto(producto);
+            membresia.setFechaInicio(ahora);
+            membresia.setFechaFin(fin);
+            membresia.setEstado("ACTIVA");
+            membresia.setPaymentReference(chargeId);
+        } else {
+            // ✅ No tiene membresía activa → CREAMOS una nueva
+            membresia = Membresia.builder()
+                    .usuario(usuario)
+                    .producto(producto)
+                    .fechaInicio(ahora)
+                    .fechaFin(fin)
+                    .estado("ACTIVA")
+                    .paymentReference(chargeId) // id de Culqi
+                    .build();
+        }
 
         membresia = membresiaRepository.save(membresia);
 
         return PaymentResponseDTO.builder()
                 .success(true)
-                .message("Pago exitoso y membresía creada")
+                .message("Pago exitoso y membresía creada/actualizada")
                 .chargeId(chargeId)
                 .membresiaId(membresia.getId())
                 .rawResponse(culqiResponse.toString())
                 .build();
+
     }
 }
