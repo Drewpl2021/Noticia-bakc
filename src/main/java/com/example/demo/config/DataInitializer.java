@@ -97,6 +97,34 @@ public class DataInitializer implements CommandLineRunner {
 
             usuarioRepository.save(u2);
         }
+        // Usuario 3: Deysy
+        if (!usuarioRepository.existsByUsername("cristian.cabana")) {
+            Usuario u2 = Usuario.builder()
+                    .name("Cristian")
+                    .lastName("Cabana Sulca")
+                    .number("998327756")
+                    .username("cristian.cabana")
+                    .email("crisho@gmail.com")
+                    .passwordHash(passwordEncoder.encode("12345")) // se encripta aquí
+                    .rol(userRole)
+                    .build();
+
+            usuarioRepository.save(u2);
+        }
+        // Usuario 5: Deysy
+        if (!usuarioRepository.existsByUsername("alessandro.mamani")) {
+            Usuario u2 = Usuario.builder()
+                    .name("Alessandro Pastor")
+                    .lastName("Mamani Mamani")
+                    .number("998327756")
+                    .username("alessandro.mamani")
+                    .email("alex@gmail.com")
+                    .passwordHash(passwordEncoder.encode("12345")) // se encripta aquí
+                    .rol(userRole)
+                    .build();
+
+            usuarioRepository.save(u2);
+        }
     }
 
     private void initScrappers() {
