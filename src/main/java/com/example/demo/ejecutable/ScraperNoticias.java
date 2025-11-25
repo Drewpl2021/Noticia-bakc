@@ -15,8 +15,8 @@ public class ScraperNoticias {
     // ================== Config MySQL (Laragon local) ==================
     private static final String DB_URL =
             "jdbc:mysql://noticias.cng9drffpf1p.us-east-1.rds.amazonaws.com:3306/noticias?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
-    private static final String DB_USER = "root";
-    private static final String DB_PASS = "";
+    private static final String DB_USER = "admin";
+    private static final String DB_PASS = "2025DTI.";
 
     // ================== Scraper config ==================
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
